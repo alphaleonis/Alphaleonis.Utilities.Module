@@ -7,7 +7,7 @@
     <ProjectGuid>{4E8D4D27-3B46-4E97-A31E-940C06C32C8A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AlphaClop</RootNamespace>
+    <RootNamespace>Alphaleonis.CommandLine</RootNamespace>
     <AssemblyName>AlphaClop</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -46,11 +46,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Utilities\ILookaheadReader.cs" />
+    <Compile Include="Utilities\LookaheadReader.cs" />
+    <Compile Include="Utilities\CharReader.cs" />
+    <Compile Include="Tokenizer\WindowsCommandLineTokenizer.cs" />
+    <Compile Include="Tokenizer\ICommandLineTokenizer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tokenizer\Token.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="AlphaClop.snk" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
