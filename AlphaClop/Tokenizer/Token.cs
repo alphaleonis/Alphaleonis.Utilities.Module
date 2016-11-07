@@ -13,10 +13,10 @@ namespace Alphaleonis.CommandLine
 
    public enum TokenType
    {
-      None,      
+      None,
       Name,
       Assignment,
-      Value      
+      Value
    }
 
 
@@ -24,6 +24,8 @@ namespace Alphaleonis.CommandLine
    [DebuggerDisplay("{TokenType} {Text}")]
    public class Token : IEquatable<Token>
    {
+      public static readonly Token Empty = new Token(TokenType.None, "", TokenModifier.None);
+       
       public static Token OptionName(string text, TokenModifier modifier = TokenModifier.None)
       {
          return new Token(TokenType.Name, text, modifier);
@@ -39,7 +41,7 @@ namespace Alphaleonis.CommandLine
          return new Token(TokenType.Assignment, text, TokenModifier.None);
       }
 
-      public Token(TokenType type, string text, TokenModifier modifier)
+      private Token(TokenType type, string text, TokenModifier modifier)
       {
          TokenType = type;
          Text = text;
@@ -62,7 +64,20 @@ namespace Alphaleonis.CommandLine
 
       public override bool Equals(object obj)
       {
-         return Equals(obj as Token);
+         if (obj is Token)
+            return Equals((Token)obj);
+
+         return false;
+      }
+
+      public static bool operator ==(Token a, Token b)
+      {
+         return a.Equals(b);
+      }
+
+      public static bool operator !=(Token a, Token b)
+      {
+         return !a.Equals(b);
       }
 
       public override int GetHashCode()

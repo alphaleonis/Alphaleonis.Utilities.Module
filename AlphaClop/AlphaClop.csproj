@@ -47,10 +47,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Tokenizer\IParameterDefinition.cs" />
+    <Compile Include="Tokenizer\LexerBase.cs" />
+    <Compile Include="Tokenizer\WindowsStyleLexer.cs" />
     <Compile Include="Utilities\ILookaheadReader.cs" />
     <Compile Include="Utilities\LookaheadReader.cs" />
     <Compile Include="Utilities\CharReader.cs" />
-    <Compile Include="Tokenizer\WindowsCommandLineTokenizer.cs" />
     <Compile Include="Tokenizer\ICommandLineTokenizer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tokenizer\Token.cs" />

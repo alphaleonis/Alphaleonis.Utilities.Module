@@ -27,7 +27,7 @@ namespace TestApp
          //   "=value"
          //};
 
-         MyLexer lexer = new MyLexer();
+         WindowsStyleLexer lexer = new WindowsStyleLexer();
          var tokens = lexer.Tokenize(args);
          foreach (var token in tokens)
          {
