@@ -11,33 +11,27 @@ namespace Alphaleonis.CommandLine
       Exclude
    }
 
-   internal enum TokenType
+   public enum TokenType
    {
       None,      
       Name,
       Assignment,
-      UnquotedValue,
-      QuotedValue
+      Value      
    }
 
 
    [Serializable]
    [DebuggerDisplay("{TokenType} {Text}")]
-   internal class Token : IEquatable<Token>
+   public class Token : IEquatable<Token>
    {
       public static Token OptionName(string text, TokenModifier modifier = TokenModifier.None)
       {
          return new Token(TokenType.Name, text, modifier);
       }
 
-      public static Token UnqotedValue(string text)
+      public static Token Value(string text)
       {
-         return new Token(TokenType.UnquotedValue, text, TokenModifier.None);
-      }
-
-      public static Token QuotedValue(string text)
-      {
-         return new Token(TokenType.QuotedValue, text, TokenModifier.None);
+         return new Token(TokenType.Value, text, TokenModifier.None);
       }
 
       public static Token Assignment(string text)

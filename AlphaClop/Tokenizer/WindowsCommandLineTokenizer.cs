@@ -1,8 +1,10 @@
 ﻿using Alphaleonis.CommandLine.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Alphaleonis.CommandLine
 {
@@ -23,7 +25,7 @@ namespace Alphaleonis.CommandLine
          }
 
          return tokens;
-      }      
+      }
 
       #endregion
 
@@ -42,7 +44,7 @@ namespace Alphaleonis.CommandLine
                sb.Append(reader.Read());
             }
 
-            return Token.UnqotedValue(sb.ToString());
+            return Token.Value(sb.ToString());
          }
 
          // Skip any insignificant whitespace
@@ -75,7 +77,7 @@ namespace Alphaleonis.CommandLine
             else
                sb.Append((char)reader.Read());
          }
-         return new Token(TokenType.UnquotedValue, sb.ToString(), TokenModifier.None);
+         return new Token(TokenType.Value, sb.ToString(), TokenModifier.None);
       }
 
       private static void ReadEscapeCharacters(CharReader reader, StringBuilder sb)
@@ -130,7 +132,7 @@ namespace Alphaleonis.CommandLine
             }
          }
 
-         return new Token(TokenType.QuotedValue, sb.ToString(), TokenModifier.None);
+         return new Token(TokenType.Value, sb.ToString(), TokenModifier.None);
       }
 
       private static Token ReadNextAssignment(CharReader reader)
@@ -158,5 +160,176 @@ namespace Alphaleonis.CommandLine
       }
 
       #endregion
+   }
+   public class MyLexer : LexerBase
+   {
+      protected override void Tokenize(Context context)
+      {
+         while (context.MoveNextArg())
+         {
+            Console.WriteLine($"Parsing: \"{context.CurrentArg}\"");
+            if (context.OptionsTerminated)
+               MatchValue(context);
+            else
+               MatchOptionNameOrValue(context);
+         }
+      }
+
+      private void MatchOptionNameOrValue(Context context)
+      {
+         if (context.CurrentArg.Equals("--", StringComparison.Ordinal))
+         {
+            context.OptionsTerminated = true;
+         }
+         else if (!context.OptionsTerminated && (context.Peek(0) == '-' || context.Peek(0) == '/') && context.Peek(1) != -1 && !Char.IsWhiteSpace((char)context.Peek(1)))
+         {
+            MatchOptionName(context);
+         }
+         else
+         {
+            MatchValue(context);
+         }
+      }
+
+      private void MatchOptionName(Context context)
+      {
+         Contract.Assert(context.Peek(0) == '-' || context.Peek(0) == '/');
+
+         StringBuilder sb = new StringBuilder();
+         context.Read(); // Consume the switch character.
+
+         int ch = context.Peek(0);
+         while (ch != -1 && ch != ':' && ch != '=')
+         {
+            sb.Append((char)context.Read());
+            ch = context.Peek(0);
+         }
+
+         context.Tokens.Add(Token.OptionName(sb.ToString()));
+
+         if (ch != -1)
+         {
+            context.Tokens.Add(Token.Assignment(((char)context.Read()).ToString()));
+            MatchValue(context);
+         }
+      }
+
+      private void MatchValue(Context context)
+      {
+         StringBuilder sb = new StringBuilder();
+         int ch;
+         while ((ch = context.Read()) != -1)
+         {
+            sb.Append((char)ch);
+         }
+
+         context.Tokens.Add(Token.Value(sb.ToString()));
+      }      
+   }
+
+   public class WindowsStyleLexer : ILexer
+   {
+      private static readonly Regex s_optionRegex = new Regex(@"\A(?:-|/)(?<name>[^\s\:\=\-][^\s\:\=]*)(?:\s*(?<assign>=|:))?(?<value>.+)?", RegexOptions.Compiled);
+      private static readonly Regex s_assignmentRegex = new Regex(@"\A(?<assign>=|:)(?<value>.+)?");
+
+      //public IReadOnlyList<Token> Tokenize2(string[] args)
+      //{
+      //   List<Token> tokens = new List<Token>();
+      //   if (args == null)
+      //      return tokens;
+
+      //   int i = 0;
+      //   while (i < args.Length)
+      //   {            
+      //      var arg = args[i];
+      //      if (arg == null || arg.Length == 0)
+      //         continue;
+
+      //      if (arg.Equals("--", StringComparison.Ordinal))
+      //      {
+
+      //      }
+      //      if (arg[0] == '-' || arg[0] == '/')
+      //      {
+      //         MatchOption(tokens, arg);
+      //      }
+      //   }         
+      //}
+
+
+      private static int LA(string s, int i)
+      {
+         if (i >= s.Length)
+            return -1;
+
+         return s[i];
+      }
+
+      public IReadOnlyList<Token> Tokenize(string[] args)
+      {
+         List<Token> tokens = new List<Token>();
+         bool wasTerminated = false;
+
+         if (args != null)
+         {
+            foreach (var arg in args)
+            {
+               if (wasTerminated)
+               {
+                  tokens.Add(Token.Value(arg));
+               }
+               else if (arg.Equals("--") && (tokens.Count == 0 || tokens[tokens.Count - 1].TokenType != TokenType.Assignment))
+               {
+                  wasTerminated = true;
+               }
+               else
+               {
+                  Match optionMatch = s_optionRegex.Match(arg);
+                  if (optionMatch.Success)
+                  {
+                     tokens.Add(Token.OptionName(optionMatch.Groups["name"].Value));
+
+                     var assignmentGroup = optionMatch.Groups["assign"];
+                     if (assignmentGroup.Success)
+                        tokens.Add(Token.Assignment(optionMatch.Groups["assign"].Value));
+
+                     var valueGroup = optionMatch.Groups["value"];
+                     if (valueGroup.Success)
+                     {
+                        tokens.Add(Token.Value(valueGroup.Value));
+                     }
+                  }
+                  else
+                  {
+                     Match assignmentMatch = s_assignmentRegex.Match(arg);
+                     if (assignmentMatch.Success)
+                     {
+                        tokens.Add(Token.Assignment(assignmentMatch.Groups["assign"].Value));
+                        var valueGroup = assignmentMatch.Groups["value"];
+                        if (valueGroup.Success)
+                           tokens.Add(Token.Value(valueGroup.Value));
+                     }
+                     else
+                     {
+                        tokens.Add(Token.Value(arg));
+                     }
+                  }
+               }
+            }
+         }
+
+         return tokens;
+
+      }
+
+      public string GetOptionDisplayText(IParameterDefinition parameter)
+      {
+         throw new NotImplementedException();
+      }
+
+      public void ValidateParameterNames(IParameterDefinition parameter)
+      {
+         throw new NotImplementedException();
+      }
    }
 }
